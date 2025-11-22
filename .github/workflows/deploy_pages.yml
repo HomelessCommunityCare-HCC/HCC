@@ -1,0 +1,42 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Build and deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare static site for Pages
+        run: |
+          # This step tries to find common static output locations and copy them into ./public
+          # If your site is already static in the repo root, a docs/ folder, or a public/ folder,
+          # this will make sure those files end up in public/ which is the artifact uploaded to Pages.
+          set -e
+          mkdir -p public
+          if [ -d "docs" ]; then echo "Copying docs/ -> public/"; cp -r docs/* public/ || true; fi
+          if [ -d "public" ]; then echo "Copying existing public/ -> public/"; cp -r public/* public/ || true; fi
+          if [ -f "index.html" ]; then echo "Copying index.html -> public/"; cp index.html public/ || true; fi
+          echo "Public contents:"; ls -la public || true
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
